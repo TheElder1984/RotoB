@@ -40,6 +40,10 @@ const SCIENTIST_EMOJI = '👨‍🔬';
 let robotMoveCount = 0;
 const SCIENTIST_MOVE_RATIO = 2; // Scientist moves every N robot moves
 
+// Track total moves for Conway's Game of Life
+let totalMoves = 0;
+const CONWAY_UPDATE_INTERVAL = 20; // Update maze every 20 moves
+
 // Generate maze using randomized obstacle placement
 function generateMaze() {
     // Initialize all cells as open passages (0)
@@ -111,6 +115,82 @@ function spawnScientists() {
     }
 }
 
+// Conway's Game of Life rules for maze evolution
+function applyConwayRules() {
+    const newWalls = [];
+
+    // Create a copy of current walls
+    for (let y = 0; y < ROWS; y++) {
+        newWalls[y] = [...walls[y]];
+    }
+
+    // Apply Conway's rules to each cell
+    for (let y = 1; y < ROWS - 1; y++) {
+        for (let x = 1; x < COLS - 1; x++) {
+            // Count wall neighbors
+            let wallNeighbors = 0;
+            for (let dy = -1; dy <= 1; dy++) {
+                for (let dx = -1; dx <= 1; dx++) {
+                    if (dx === 0 && dy === 0) continue;
+                    if (walls[y + dy][x + dx] === 1) {
+                        wallNeighbors++;
+                    }
+                }
+            }
+
+            // Conway's Game of Life rules
+            if (walls[y][x] === 1) {
+                // Wall cell
+                if (wallNeighbors < 2 || wallNeighbors > 3) {
+                    // Dies (becomes passage)
+                    newWalls[y][x] = 0;
+                }
+            } else {
+                // Passage cell
+                if (wallNeighbors === 3) {
+                    // Becomes a wall
+                    newWalls[y][x] = 1;
+                }
+            }
+        }
+    }
+
+    // Update walls
+    walls = newWalls;
+
+    // Ensure critical positions are always open
+    ensurePlayability();
+}
+
+// Ensure the maze remains playable after Conway update
+function ensurePlayability() {
+    // Keep robot position open
+    walls[robot.y][robot.x] = 0;
+
+    // Keep scientist positions open
+    for (const scientist of scientists) {
+        walls[scientist.y][scientist.x] = 0;
+    }
+
+    // Keep coin positions open
+    for (const coin of coins) {
+        walls[coin.y][coin.x] = 0;
+    }
+
+    // Ensure start position is open
+    walls[1][1] = 0;
+}
+
+// Visual feedback for maze evolution
+function showMazeEvolution() {
+    // Flash the background to indicate maze change
+    const originalBg = document.body.style.backgroundColor;
+    document.body.style.backgroundColor = '#ff6b6b';
+    setTimeout(() => {
+        document.body.style.backgroundColor = originalBg;
+    }, 200);
+}
+
 function findReachableArea() {
     const reachable = new Set();
     const queue = [{ x: 1, y: 1 }];
@@ -121,16 +201,16 @@ function findReachableArea() {
         const current = queue[head++];
         
         const neighbors = [
-            { x: current.x, y: current.y - 2 },
-            { x: current.x - 2, y: current.y },
-            { x: current.x, y: current.y + 2 },
-            { x: current.x + 2, y: current.y }
+            { x: current.x, y: current.y - 1 },
+            { x: current.x - 1, y: current.y },
+            { x: current.x, y: current.y + 1 },
+            { x: current.x + 1, y: current.y }
         ];
 
         for (const neighbor of neighbors) {
             const key = `${neighbor.x},${neighbor.y}`;
-            if (neighbor.x > 0 && neighbor.y > 0 &&
-                neighbor.x < COLS - 1 && neighbor.y < ROWS - 1 &&
+            if (neighbor.x >= 0 && neighbor.y >= 0 &&
+                neighbor.x < COLS && neighbor.y < ROWS &&
                 walls[neighbor.y][neighbor.x] === 0 &&
                 !reachable.has(key)) {
                 reachable.add(key);
@@ -151,7 +231,7 @@ function placeCoins() {
     const totalReachable = reachable.size;
 
     // Place fewer coins to make maze less dense
-    const numCoins = Math.floor(totalReachable * 0.35);
+    const numCoins = Math.floor(totalReachable * 0.15); // Reduced from 35% to 15%
 
     let reachableArray = Array.from(reachable).map(s => {
         const [x, y] = s.split(',').map(Number);
@@ -350,6 +430,17 @@ function moveRobot(dx, dy) {
     robot.x = newX;
     robot.y = newY;
 
+    // Increment total moves
+    totalMoves++;
+
+    // Apply Conway's Game of Life every 20 moves
+    if (totalMoves % CONWAY_UPDATE_INTERVAL === 0) {
+        applyConwayRules();
+
+        // Show visual feedback for maze evolution
+        showMazeEvolution();
+    }
+
     // Collect coin
     const coinCollected = collectCoin(robot);
     if (coinCollected) {
@@ -406,6 +497,7 @@ function initGame() {
     robot = { x: 1, y: 1, emoji: '🤖' };
     document.getElementById('score').textContent = '0';
     robotMoveCount = 0;
+    totalMoves = 0;
 
     // Load high score from cookie
     const highScore = getHighScoreFromCookie();
