@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RotoB Maze Game</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div class="game-container">
+        <h1>🤖 RotoB Maze</h1>
+        <div id="score-board">
+            <span>Score: <span id="score">0</span></span>
+            <span class="high-score">High Score: <span id="highScore">0</span></span>
+        </div>
+        <div id="game-canvas-container">
+            <canvas id="gameCanvas"></canvas>
+        </div>
+        <div class="instructions">
+            <h3>Controls:</h3>
+            <p><kbd>Arrow Keys</kbd> - Move the robot</p>
+            <p>Find all the coins to increase your score!</p>
+        </div>
+        <button id="restartBtn">Restart Game</button>
+    </div>
+    <script src="js/game.js"></script>
+</body>
+</html>
