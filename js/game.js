@@ -52,8 +52,8 @@ function generateMaze() {
         walls.push(row);
     }
 
-    // Randomly place walls with configurable density
-    const wallDensity = 0.35; // 35% of cells become walls
+    // Randomly place walls with lower density for more open maze
+    const wallDensity = 0.25; // 25% of cells become walls
 
     for (let y = 0; y < ROWS; y++) {
         for (let x = 0; x < COLS; x++) {
